@@ -260,7 +260,23 @@ async function loadAlerts() {
   }
 }
 function addFavorite(){if(!loc)return;if(favs.some(x=>x.lat===loc.lat&&x.lon===loc.lon)){toast('Already in favorites.');return}favs.unshift({...loc});favs=favs.slice(0,12);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs();toast('Location saved.')}function renderFavs(){let e=$('#favoriteList');if(!favs.length){e.innerHTML='<div class="empty">No favorites yet. Save a location from the weather screen.</div>';return}e.innerHTML=favs.map((f,i)=>`<div class="favrow"><button data-open="${i}"><strong>${esc(f.name)}</strong><div class="small">${f.lat.toFixed(2)}, ${f.lon.toFixed(2)}</div></button><button data-del="${i}" aria-label="Remove favorite" style="background:transparent;color:#ff9b9b;padding:8px">✕</button></div>`).join('');$$('[data-open]').forEach(b=>b.onclick=()=>chooseLocation(favs[+b.dataset.open]));$$('[data-del]').forEach(b=>b.onclick=()=>{favs.splice(+b.dataset.del,1);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs()})}$('#manageFav').onclick=()=>showPage('settings');$('#clearFav').onclick=()=>{if(confirm('Clear all favorite locations?')){favs=[];localStorage.setItem('jw_favs','[]');renderFavs()}};
-function loadRadar(){if(!loc)return;let range=+$('#radarRange').value;let src=`https://embed.windy.com/embed2.html?lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&width=650&height=460&zoom=${range<=25?8:range<=50?7:range<=100?6:5}&level=surface&overlay=radar&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&metricTemp=${units==='celsius'?'°C':'°F'}&metricWind=${units==='celsius'?'km/h':'mph'}`;$('#radarMap').src=src}$('#radarRange').onchange=loadRadar;$('#refreshRadar').onclick=loadRadar;$('#openRadar').onclick=()=>{if(!loc)return toast('Choose a location first.');window.open(`https://www.windy.com/${loc.lat}/${loc.lon}?radar,${loc.lat},${loc.lon},7`,'_blank','noopener')};
+function loadRadar(){
+  const frame = $('#radarMap');
+  const src = 'https://weatherscope.com/embed/map?zoom=4';
+  if (frame.src !== src) frame.src = src;
+}
+$('#refreshRadar').onclick = () => {
+  const frame = $('#radarMap');
+  frame.src = 'about:blank';
+  loadRadar();
+};
+$('#openRadar').onclick = () => {
+  window.open(
+    'https://weatherscope.com/embed/map?zoom=4',
+    '_blank',
+    'noopener'
+  );
+};
 let noaaRequestToken = 0;
 async function findNOAA() {
   if (!loc) {
