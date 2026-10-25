@@ -101,7 +101,7 @@ $('#search').addEventListener('input', () => {
     $('#suggestions').innerHTML = '';
   }
 });
-function saveLoc(){localStorage.setItem('jw_loc',JSON.stringify(loc))}async function chooseLocation(l){++alertsRequestToken;loc=l;saveLoc();$('#currentLoc').textContent='⌖ '+l.name;$('#weatherContent').innerHTML='<div class="card loading">Loading weather for '+esc(l.name)+'…</div>';await loadWeather();renderFavs();if($('#page-radar').classList.contains('active'))loadRadar();if($('#page-noaa').classList.contains('active'))findNOAA()}
+function saveLoc(){localStorage.setItem('jw_loc',JSON.stringify(loc))}async function chooseLocation(l){++alertsRequestToken;++noaaRequestToken;loc=l;saveLoc();$('#currentLoc').textContent='⌖ '+l.name;$('#weatherContent').innerHTML='<div class="card loading">Loading weather for '+esc(l.name)+'…</div>';await loadWeather();renderFavs();if($('#page-radar').classList.contains('active'))loadRadar();if($('#page-noaa').classList.contains('active'))findNOAA()}
 $('#currentLoc').onclick=useLocation;$('#settingsLoc').onclick=useLocation;function useLocation(){if(!navigator.geolocation){toast('Location is not supported by this browser.');return}toast('Requesting location permission…');navigator.geolocation.getCurrentPosition(async p=>{let {latitude:lat,longitude:lon}=p.coords;let name='My location';try{let d=await(await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en&format=json`)).json();let x=d.results?.[0];if(x)name=[x.name,x.admin1].filter(Boolean).join(', ')}catch{}chooseLocation({name,lat,lon})},e=>toast('Location unavailable. Allow location access or search for a city.'),{enableHighAccuracy:false,timeout:12000,maximumAge:600000})}
 
 async function loadWeather(){
