@@ -374,6 +374,11 @@ async function playStream(url, title, type) {
 
     await audio.play();
   } catch (error) {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    $('#radioPlayer').classList.add('hidden');
+    $('#noaaPlayer').classList.add('hidden');
     toast('Playback failed. This station may be offline or block playback.');
   }
 }
