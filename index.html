@@ -229,7 +229,41 @@ async function loadAlerts() {
 function addFavorite(){if(!loc)return;if(favs.some(x=>x.lat===loc.lat&&x.lon===loc.lon)){toast('Already in favorites.');return}favs.unshift({...loc});favs=favs.slice(0,12);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs();toast('Location saved.')}function renderFavs(){let e=$('#favoriteList');if(!favs.length){e.innerHTML='<div class="empty">No favorites yet. Save a location from the weather screen.</div>';return}e.innerHTML=favs.map((f,i)=>`<div class="favrow"><button data-open="${i}"><strong>${esc(f.name)}</strong><div class="small">${f.lat.toFixed(2)}, ${f.lon.toFixed(2)}</div></button><button data-del="${i}" aria-label="Remove favorite" style="background:transparent;color:#ff9b9b;padding:8px">✕</button></div>`).join('');$$('[data-open]').forEach(b=>b.onclick=()=>chooseLocation(favs[+b.dataset.open]));$$('[data-del]').forEach(b=>b.onclick=()=>{favs.splice(+b.dataset.del,1);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs()})}$('#manageFav').onclick=()=>showPage('settings');$('#clearFav').onclick=()=>{if(confirm('Clear all favorite locations?')){favs=[];localStorage.setItem('jw_favs','[]');renderFavs()}};
 function loadRadar(){if(!loc)return;let range=+$('#radarRange').value;let src=`https://embed.windy.com/embed2.html?lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&width=650&height=460&zoom=${range<=25?8:range<=50?7:range<=100?6:5}&level=surface&overlay=radar&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&metricTemp=${units==='celsius'?'°C':'°F'}&metricWind=${units==='celsius'?'km/h':'mph'}`;$('#radarMap').src=src}$('#radarRange').onchange=loadRadar;$('#refreshRadar').onclick=loadRadar;$('#openRadar').onclick=()=>{if(!loc)return toast('Choose a location first.');window.open(`https://www.windy.com/${loc.lat}/${loc.lon}?radar,${loc.lat},${loc.lon},7`,'_blank','noopener')};
 async function findNOAA(){if(!loc){toast('Choose a location first.');return}$('#noaaList').innerHTML='<div class="loading">Finding nearby NOAA stations…</div>';try{let d=await(await fetch('https://api.wxindex.org/v1/stations/all')).json();let stations=Array.isArray(d)?d:(d.stations||[]);const dist=(a,b,c,d)=>{let r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b),q=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 3958.8*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))};noaa=stations.flatMap(s=>(s.feeds||[]).filter(f=>f.stream_url).map(f=>({name:s.name||s.callsign||'NOAA Weather Radio',callSign:s.callsign||'',city:s.city||'',frequency:s.frequency||'',url:f.stream_url,distance:dist(loc.lat,loc.lon,+s.latitude,+s.longitude)}))).filter(s=>Number.isFinite(s.distance)).sort((a,b)=>a.distance-b.distance).slice(0,8);renderNOAA()}catch(e){$('#noaaList').innerHTML='<div class="empty">Could not retrieve NOAA station data. Try again later.</div>'}}function renderNOAA(){let e=$('#noaaList');if(!noaa.length){e.innerHTML='<div class="empty">No station streams were returned for this area.</div>';return}e.innerHTML=noaa.map((s,i)=>`<div class="station"><button data-noaa="${i}"><strong>${esc(s.callSign||s.name)}</strong><div class="small">${esc(s.city)} ${s.frequency?'· '+esc(s.frequency):''}</div><div class="small">${s.distance.toFixed(1)} miles away</div></button><button class="btn secondary" data-noaaplay="${i}">▶ Play</button></div>`).join('');$$('[data-noaaplay]').forEach(b=>b.onclick=()=>playStream(noaa[+b.dataset.noaaplay].url,noaa[+b.dataset.noaaplay].callSign||noaa[+b.dataset.noaaplay].name,'noaa'))}$('#findNOAA').onclick=findNOAA;$('#stopNOAA').onclick=stopAudio;
-const categories={news:'news talk',country:'country',rock:'rock',jazz:'jazz',classical:'classical',alternative:'alternative',christian:'christian',local:'local'};async function findRadio(){let cat=$('#radioCategory').value;$('#radioList').innerHTML='<div class="loading">Searching radio stations…</div>';try{let url;if(cat==='local'&&loc)url=`https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=25&order=clickcount&reverse=true&geo_lat=${loc.lat}&geo_long=${loc.lon}&geo_distance=80000`;else url=`https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=25&order=clickcount&reverse=true&tag=${encodeURIComponent(categories[cat]||cat)}`;let d=await(await fetch(url)).json();radio=d.filter(x=>x.url_resolved&&x.name);renderRadio()}catch(e){$('#radioList').innerHTML='<div class="empty">Could not load radio stations. Try again.</div>'}}function renderRadio(){if(!radio.length){$('#radioList').innerHTML='<div class="empty">No stations found for this category.</div>';return}$('#radioList').innerHTML=radio.slice(0,20).map((s,i)=>`<div class="station"><button data-radio="${i}"><strong>${esc(s.name)}</strong><div class="small">${esc(s.country||'Internet radio')} · ${esc(s.tags||'')}</div></button><button class="btn secondary" data-radioplay="${i}">▶ Play</button></div>`).join('');$$('[data-radioplay]').forEach(b=>b.onclick=()=>playStream(radio[+b.dataset.radioplay].url_resolved,radio[+b.dataset.radioplay].name,'radio'))}$('#findRadio').onclick=findRadio;$('#radioSearch').onclick=findRadio;$('#stopRadio').onclick=stopAudio;let activePlayer='';function playStream(url,name,type){let a=$('#audio');a.src=url;a.classList.remove('hidden');a.play().then(()=>toast('Playing '+name)).catch(()=>toast('Stream selected. Tap Play in the audio controls if it did not start.'));activePlayer=type;$('#noaaPlayer').classList.toggle('hidden',type!=='noaa');$('#radioPlayer').classList.toggle('hidden',type!=='radio');if(type==='noaa')$('#noaaNow').textContent=name;else $('#radioNow').textContent=name;$('#stopNOAA').onclick=stopAudio;$('#stopRadio').onclick=stopAudio}function stopAudio(){let a=$('#audio');a.pause();a.removeAttribute('src');a.load();$('#noaaPlayer').classList.add('hidden');$('#radioPlayer').classList.add('hidden');activePlayer=''}
+let radioRequestToken = 0; const categories={news:'news talk',country:'country',rock:'rock',jazz:'jazz',classical:'classical',alternative:'alternative',christian:'christian',local:'local'};
+async function findRadio() {
+  const token = ++radioRequestToken;
+  const cat = $('#radioCategory').value;
+
+  $('#radioList').innerHTML =
+    '<div class="loading">Searching radio stations…</div>';
+
+  try {
+    let url;
+
+    if (cat === 'local' && loc) {
+      const requestLoc = { ...loc };
+      url = `https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=25&order=clickcount&reverse=true&geo_lat=${requestLoc.lat}&geo_long=${requestLoc.lon}&geo_distance=80000`;
+    } else {
+      url = `https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=25&order=clickcount&reverse=true&tag=${encodeURIComponent(categories[cat] || cat)}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Radio search failed');
+
+    const data = await response.json();
+
+    // Ignore results if a newer radio search has started.
+    if (token !== radioRequestToken) return;
+
+    radio = data.filter(x => x.url_resolved && x.name);
+    renderRadio();
+  } catch (error) {
+    if (token !== radioRequestToken) return;
+
+    $('#radioList').innerHTML =
+      '<div class="empty">Could not load radio stations. Try again.</div>';
+  }
+}
 $('#units').onchange=()=>{units=$('#units').value;localStorage.setItem('jw_units',units);loadWeather()};$('#clock24').onchange=()=>{clock24=$('#clock24').checked;localStorage.setItem('jw_clock24',clock24);toast('Setting saved.')};
 (async function init(){renderFavs();let saved=localStorage.getItem('jw_loc');if(saved){try{await chooseLocation(JSON.parse(saved))}catch{}}else if(favs.length){await chooseLocation(favs[0])}})();
 </script></body></html>
