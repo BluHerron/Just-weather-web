@@ -9,7 +9,32 @@
 </style></head><body><div class="toast" id="toast"></div><main class="app"><header class="top"><div class="brand">Just <span>Weather</span></div><button class="locbtn" id="currentLoc">◎ Use my location</button></header>
 <div class="searchrow"><input id="search" placeholder="Search city or ZIP code" autocomplete="off"><button class="btn" id="searchBtn">Search</button></div><div class="suggestions hidden" id="suggestions"></div>
 <section class="page active" id="page-weather"><div id="weatherContent"><div class="card loading">Search for a city or use your location to load local weather.</div></div><div class="sectionhead"><h2>Favorite locations</h2><button id="manageFav">Manage</button></div><div id="favoriteList"></div></section>
-<section class="page" id="page-radar"><div class="sectionhead"><h2>Weather radar</h2><button id="refreshRadar">Refresh</button></div><div class="card"><div class="radioctrl"><label class="small">Radar range</label><select id="radarRange"><option value="25">25 miles</option><option value="50" selected>50 miles</option><option value="100">100 miles</option><option value="200">200 miles</option></select><button class="btn secondary" id="openRadar">Open full map ↗</button></div><div class="radarbox" style="margin-top:12px"><iframe id="radarMap" title="Radar map" loading="lazy" referrerpolicy="no-referrer" src="about:blank"></iframe></div><div class="radarhint">Radar is shown through Windy’s embedded radar map. Tap “Open full map” for a larger interactive view. Radar coverage and update timing depend on the data provider.</div></div></section>
+<section class="page" id="page-radar">
+  <div class="sectionhead">
+    <h2>Weather radar</h2>
+    <button id="refreshRadar">Refresh</button>
+  </div>
+  <div class="card">
+    <div class="radioctrl">
+      <button class="btn secondary" id="openRadar">
+        Open full map ↗
+      </button>
+    </div>
+    <div class="radarbox" style="margin-top:12px">
+      <iframe
+        id="radarMap"
+        title="WeatherScope live weather map"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        src="about:blank">
+      </iframe>
+    </div>
+    <div class="radarhint">
+      Interactive weather map provided by WeatherScope.
+      Tap “Open full map” to view it in a separate tab.
+    </div>
+  </div>
+</section>
 <section class="page" id="page-noaa"><div class="sectionhead"><h2>NOAA Weather Radio</h2><button id="findNOAA">Find nearby</button></div><div class="card"><p class="small">Find internet streams from NOAA Weather Radio stations nearest to your selected location.</p><div id="noaaList" class="loading">Choose a location, then tap Find nearby.</div><div id="noaaPlayer" class="nowplaying hidden"><div><strong id="noaaNow">Not playing</strong><div class="small">NOAA Weather Radio</div></div><button id="stopNOAA">Stop</button></div></div></section>
 <section class="page" id="page-radio"><div class="sectionhead"><h2>Internet radio</h2><button id="findRadio">Browse</button></div><div class="card"><div class="radioctrl"><select id="radioCategory"><option value="local">Local stations</option><option value="news">News & Talk</option><option value="country">Country</option><option value="rock">Rock</option><option value="jazz">Jazz</option><option value="classical">Classical</option><option value="alternative">Indie / Alternative</option><option value="christian">Christian</option></select><button class="btn" id="radioSearch">Find stations</button></div><div id="radioList" style="margin-top:12px"><div class="empty">Choose a category and tap Find stations.</div></div><div id="radioPlayer" class="nowplaying hidden"><div><strong id="radioNow">Not playing</strong><div class="small">Internet radio</div></div><button id="stopRadio">Stop</button></div><audio id="audio" controls playsinline class="hidden" style="width:100%;margin-top:10px"></audio></div></section>
 <section class="page" id="page-settings"><div class="sectionhead"><h2>Settings</h2></div><div class="card"><div class="toggle"><div><strong>Temperature</strong><div class="small">Choose display units</div></div><select id="units"><option value="fahrenheit">Fahrenheit</option><option value="celsius">Celsius</option></select></div><div class="toggle"><div><strong>24-hour clock</strong><div class="small">Use 24-hour time format</div></div><input id="clock24" type="checkbox"></div><div class="toggle"><div><strong>Current location</strong><div class="small">Browser location permission is requested only when you tap the button.</div></div><button class="btn secondary" id="settingsLoc">Use location</button></div><div class="toggle"><div><strong>Favorite locations</strong><div class="small">Stored in this browser on this device</div></div><button class="btn secondary" id="clearFav">Clear</button></div></div><div class="card"><strong>About Just Weather</strong><p class="small">An independent weather dashboard using Open-Meteo, RainViewer, WXIndex and Radio Browser data services. Weather and radio availability can vary by provider. This is a web-app edition and does not yet include every feature of the Roku app.</p><p class="small">Tip: in Safari, tap Share → Add to Home Screen to launch it like an app.</p></div></section>
