@@ -455,6 +455,7 @@ $$('[data-radio-play], [data-radio-station]').forEach(button => {
     if (station) playStream(station.url_resolved, station.name, 'radio');
   };
 });
+}
 
 // Connect both internet-radio search buttons.
 $('#radioSearch').onclick = findRadio;
