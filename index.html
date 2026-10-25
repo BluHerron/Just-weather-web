@@ -406,13 +406,13 @@ function renderRadio() {
     </div>
   `).join('');
 
-  $$('[data-radio-play]').forEach(button => {
-    button.onclick = () => {
-      const station = radio[+button.dataset.radioPlay];
-      playStream(station.url_resolved, station.name, 'radio');
-    };
-  });
-}
+$$('[data-radio-play], [data-radio-station]').forEach(button => {
+  button.onclick = () => {
+    const index = +(button.dataset.radioPlay ?? button.dataset.radioStation);
+    const station = radio[index];
+    if (station) playStream(station.url_resolved, station.name, 'radio');
+  };
+});
 
 // Connect both internet-radio search buttons.
 $('#radioSearch').onclick = findRadio;
