@@ -426,6 +426,6 @@ $('#stopNOAA').onclick = stopAudio;
 $('#audio').onerror = () => {
   toast('Unable to play this stream. Try another station.');
 };
-$('#units').onchange=()=>{units=$('#units').value;localStorage.setItem('jw_units',units);loadWeather()};$('#clock24').onchange=()=>{clock24=$('#clock24').checked;localStorage.setItem('jw_clock24',clock24);toast('Setting saved.')};
+$('#units').onchange=()=>{units=$('#units').value;++rainToken;localStorage.setItem('jw_units',units);loadWeather()};$('#clock24').onchange=()=>{clock24=$('#clock24').checked;localStorage.setItem('jw_clock24',clock24);toast('Setting saved.')};
 (async function init(){renderFavs();let saved=localStorage.getItem('jw_loc');if(saved){try{await chooseLocation(JSON.parse(saved))}catch{}}else if(favs.length){await chooseLocation(favs[0])}})();
 </script></body></html>
