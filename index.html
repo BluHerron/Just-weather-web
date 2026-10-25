@@ -330,7 +330,7 @@ async function findRadio() {
     // Ignore results if a newer radio search has started.
     if (token !== radioRequestToken) return;
 
-    radio = data.filter(x => x.url_resolved && x.name);
+    radio = data.filter(x => x.url_resolved && x.name);  if (!radio.length) {   $('#radioList').innerHTML =     '<div class="empty">No stations found in this category. Try another category.</div>';   return; }
     renderRadio();
   } catch (error) {
     if (token !== radioRequestToken) return;
