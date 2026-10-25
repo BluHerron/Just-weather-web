@@ -349,7 +349,6 @@ function stopAudio() {
   $('#radioPlayer').classList.add('hidden');
   $('#noaaPlayer')?.classList.add('hidden');
 }
-
 async function playStream(url, title, type) {
   const audio = $('#audio');
 
@@ -363,8 +362,15 @@ async function playStream(url, title, type) {
     audio.src = url;
     audio.classList.remove('hidden');
 
-    $('#radioNow').textContent = title || 'Internet radio';
-    $('#radioPlayer').classList.remove('hidden');
+    if (type === 'noaa') {
+      $('#noaaNow').textContent = title || 'NOAA Weather Radio';
+      $('#noaaPlayer').classList.remove('hidden');
+      $('#radioPlayer').classList.add('hidden');
+    } else {
+      $('#radioNow').textContent = title || 'Internet radio';
+      $('#radioPlayer').classList.remove('hidden');
+      $('#noaaPlayer').classList.add('hidden');
+    }
 
     await audio.play();
   } catch (error) {
