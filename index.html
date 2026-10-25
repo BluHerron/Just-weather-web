@@ -85,7 +85,8 @@ $('#search').addEventListener('input', () => {
     $('#suggestions').innerHTML = '';
   }
 });
-function saveLoc(){localStorage.setItem('jw_loc',JSON.stringify(loc))}async function chooseLocation(l){++alertsRequestToken;++noaaRequestToken;++rainToken;loc=l;saveLoc();$('#currentLoc').textContent='⌖ '+l.name;$('#weatherContent').innerHTML='<div class="card loading">Loading weather for '+esc(l.name)+'…</div>';await loadWeather();renderFavs();if($('#page-radar').classList.contains('active'))loadRadar();if($('#page-noaa').classList.contains('active'))findNOAA()}
+function saveLoc(){localStorage.setItem('jw_loc',JSON.stringify(loc))}
+async function chooseLocation(l){++locationRequestToken;++alertsRequestToken;++noaaRequestToken;++rainToken;loc=l;saveLoc();$('#currentLoc').textContent='⌖ '+l.name;$('#weatherContent').innerHTML='<div class="card loading">Loading weather for '+esc(l.name)+'…</div>';await loadWeather();renderFavs();if($('#page-radar').classList.contains('active'))loadRadar();if($('#page-noaa').classList.contains('active'))findNOAA()}
 $('#currentLoc').onclick=useLocation;$('#settingsLoc').onclick=useLocation;
 function useLocation() {
   if (!navigator.geolocation) {
