@@ -236,7 +236,74 @@ async function loadAlerts() {
 }
 function addFavorite(){if(!loc)return;if(favs.some(x=>x.lat===loc.lat&&x.lon===loc.lon)){toast('Already in favorites.');return}favs.unshift({...loc});favs=favs.slice(0,12);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs();toast('Location saved.')}function renderFavs(){let e=$('#favoriteList');if(!favs.length){e.innerHTML='<div class="empty">No favorites yet. Save a location from the weather screen.</div>';return}e.innerHTML=favs.map((f,i)=>`<div class="favrow"><button data-open="${i}"><strong>${esc(f.name)}</strong><div class="small">${f.lat.toFixed(2)}, ${f.lon.toFixed(2)}</div></button><button data-del="${i}" aria-label="Remove favorite" style="background:transparent;color:#ff9b9b;padding:8px">✕</button></div>`).join('');$$('[data-open]').forEach(b=>b.onclick=()=>chooseLocation(favs[+b.dataset.open]));$$('[data-del]').forEach(b=>b.onclick=()=>{favs.splice(+b.dataset.del,1);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs()})}$('#manageFav').onclick=()=>showPage('settings');$('#clearFav').onclick=()=>{if(confirm('Clear all favorite locations?')){favs=[];localStorage.setItem('jw_favs','[]');renderFavs()}};
 function loadRadar(){if(!loc)return;let range=+$('#radarRange').value;let src=`https://embed.windy.com/embed2.html?lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&width=650&height=460&zoom=${range<=25?8:range<=50?7:range<=100?6:5}&level=surface&overlay=radar&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&metricTemp=${units==='celsius'?'°C':'°F'}&metricWind=${units==='celsius'?'km/h':'mph'}`;$('#radarMap').src=src}$('#radarRange').onchange=loadRadar;$('#refreshRadar').onclick=loadRadar;$('#openRadar').onclick=()=>{if(!loc)return toast('Choose a location first.');window.open(`https://www.windy.com/${loc.lat}/${loc.lon}?radar,${loc.lat},${loc.lon},7`,'_blank','noopener')};
-async function findNOAA(){if(!loc){toast('Choose a location first.');return}$('#noaaList').innerHTML='<div class="loading">Finding nearby NOAA stations…</div>';try{let d=await(await fetch('https://api.wxindex.org/v1/stations/all')).json();let stations=Array.isArray(d)?d:(d.stations||[]);const dist=(a,b,c,d)=>{let r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b),q=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 3958.8*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))};noaa=stations.flatMap(s=>(s.feeds||[]).filter(f=>f.stream_url).map(f=>({name:s.name||s.callsign||'NOAA Weather Radio',callSign:s.callsign||'',city:s.city||'',frequency:s.frequency||'',url:f.stream_url,distance:dist(loc.lat,loc.lon,+s.latitude,+s.longitude)}))).filter(s=>Number.isFinite(s.distance)).sort((a,b)=>a.distance-b.distance).slice(0,8);renderNOAA()}catch(e){$('#noaaList').innerHTML='<div class="empty">Could not retrieve NOAA station data. Try again later.</div>'}}function renderNOAA(){let e=$('#noaaList');if(!noaa.length){e.innerHTML='<div class="empty">No station streams were returned for this area.</div>';return}e.innerHTML=noaa.map((s,i)=>`<div class="station"><button data-noaa="${i}"><strong>${esc(s.callSign||s.name)}</strong><div class="small">${esc(s.city)} ${s.frequency?'· '+esc(s.frequency):''}</div><div class="small">${s.distance.toFixed(1)} miles away</div></button><button class="btn secondary" data-noaaplay="${i}">▶ Play</button></div>`).join('');$$('[data-noaaplay]').forEach(b=>b.onclick=()=>playStream(noaa[+b.dataset.noaaplay].url,noaa[+b.dataset.noaaplay].callSign||noaa[+b.dataset.noaaplay].name,'noaa'))}$('#findNOAA').onclick=findNOAA;$('#stopNOAA').onclick=stopAudio;
+let noaaRequestToken = 0;
+
+async function findNOAA() {
+  if (!loc) {
+    toast('Choose a location first.');
+    return;
+  }
+
+  const token = ++noaaRequestToken;
+  const requestLoc = { ...loc };
+
+  $('#noaaList').innerHTML =
+    '<div class="loading">Finding nearby NOAA stations…</div>';
+
+  try {
+    const response = await fetch('https://api.wxindex.org/v1/stations/all');
+    if (!response.ok) throw new Error('NOAA station request failed');
+
+    const d = await response.json();
+
+    // Ignore results from an outdated request or location.
+    if (
+      token !== noaaRequestToken ||
+      !loc ||
+      loc.lat !== requestLoc.lat ||
+      loc.lon !== requestLoc.lon
+    ) return;
+
+    const stations = Array.isArray(d) ? d : (d.stations || []);
+
+    const dist = (a, b, c, d) => {
+      const r = x => x * Math.PI / 180;
+      const dl = r(c - a), dn = r(d - b);
+      const q = Math.sin(dl / 2) ** 2 +
+        Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dn / 2) ** 2;
+      return 3958.8 * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q));
+    };
+
+    noaa = stations.flatMap(s =>
+      (s.feeds || [])
+        .filter(f => f.stream_url)
+        .map(f => ({
+          name: s.name || s.callsign || 'NOAA Weather Radio',
+          callSign: s.callsign || '',
+          city: s.city || '',
+          frequency: s.frequency || '',
+          url: f.stream_url,
+          distance: dist(
+            requestLoc.lat,
+            requestLoc.lon,
+            +s.latitude,
+            +s.longitude
+          )
+        }))
+    )
+    .filter(s => Number.isFinite(s.distance))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 8);
+
+    renderNOAA();
+  } catch (e) {
+    if (token !== noaaRequestToken) return;
+
+    $('#noaaList').innerHTML =
+      '<div class="empty">Could not retrieve NOAA station data. Try again later.</div>';
+  }
+}
+function renderNOAA(){let e=$('#noaaList');if(!noaa.length){e.innerHTML='<div class="empty">No station streams were returned for this area.</div>';return}e.innerHTML=noaa.map((s,i)=>`<div class="station"><button data-noaa="${i}"><strong>${esc(s.callSign||s.name)}</strong><div class="small">${esc(s.city)} ${s.frequency?'· '+esc(s.frequency):''}</div><div class="small">${s.distance.toFixed(1)} miles away</div></button><button class="btn secondary" data-noaaplay="${i}">▶ Play</button></div>`).join('');$$('[data-noaaplay]').forEach(b=>b.onclick=()=>playStream(noaa[+b.dataset.noaaplay].url,noaa[+b.dataset.noaaplay].callSign||noaa[+b.dataset.noaaplay].name,'noaa'))}$('#findNOAA').onclick=findNOAA;$('#stopNOAA').onclick=stopAudio;
 let radioRequestToken = 0; const categories={news:'news talk',country:'country',rock:'rock',jazz:'jazz',classical:'classical',alternative:'alternative',christian:'christian',local:'local'};
 async function findRadio() {
   const token = ++radioRequestToken;
