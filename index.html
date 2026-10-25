@@ -15,7 +15,15 @@
     <button id="refreshRadar">Refresh</button>
   </div>
   <div class="card">
+    
     <div class="radioctrl">
+      <label for="radarRange" style="font-size:13px;color:var(--muted)">View range</label>
+      <select id="radarRange" aria-label="Radar view range">
+        <option value="10">10 miles</option>
+        <option value="25" selected>25 miles</option>
+        <option value="50">50 miles</option>
+        <option value="100">100 miles</option>
+      </select>
       <button class="btn secondary" id="openRadar">
         Open full map ↗
       </button>
@@ -260,22 +268,48 @@ async function loadAlerts() {
   }
 }
 function addFavorite(){if(!loc)return;if(favs.some(x=>x.lat===loc.lat&&x.lon===loc.lon)){toast('Already in favorites.');return}favs.unshift({...loc});favs=favs.slice(0,12);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs();toast('Location saved.')}function renderFavs(){let e=$('#favoriteList');if(!favs.length){e.innerHTML='<div class="empty">No favorites yet. Save a location from the weather screen.</div>';return}e.innerHTML=favs.map((f,i)=>`<div class="favrow"><button data-open="${i}"><strong>${esc(f.name)}</strong><div class="small">${f.lat.toFixed(2)}, ${f.lon.toFixed(2)}</div></button><button data-del="${i}" aria-label="Remove favorite" style="background:transparent;color:#ff9b9b;padding:8px">✕</button></div>`).join('');$$('[data-open]').forEach(b=>b.onclick=()=>chooseLocation(favs[+b.dataset.open]));$$('[data-del]').forEach(b=>b.onclick=()=>{favs.splice(+b.dataset.del,1);localStorage.setItem('jw_favs',JSON.stringify(favs));renderFavs()})}$('#manageFav').onclick=()=>showPage('settings');$('#clearFav').onclick=()=>{if(confirm('Clear all favorite locations?')){favs=[];localStorage.setItem('jw_favs','[]');renderFavs()}};
-function loadRadar(){
+
+const radarZoomByRange = {10:10, 25:9, 50:8, 100:7};
+
+let radarRange = localStorage.getItem('jw_radar_range') || '25';
+if (!radarZoomByRange[radarRange]) radarRange = '25';
+
+$('#radarRange').value = radarRange;
+
+function radarMapUrl() {
+  const params = new URLSearchParams({
+    zoom: String(radarZoomByRange[radarRange])
+  });
+
+  if (loc && Number.isFinite(+loc.lat) && Number.isFinite(+loc.lon)) {
+    params.set('lat', String(loc.lat));
+    params.set('lon', String(loc.lon));
+  }
+
+  return 'https://weatherscope.com/embed/map?' + params.toString();
+}
+
+function loadRadar() {
   const frame = $('#radarMap');
-  const src = 'https://weatherscope.com/embed/map?zoom=4';
+  const src = radarMapUrl();
   if (frame.src !== src) frame.src = src;
 }
+
+$('#radarRange').onchange = () => {
+  radarRange = $('#radarRange').value;
+  localStorage.setItem('jw_radar_range', radarRange);
+  loadRadar();
+};
+
 $('#refreshRadar').onclick = () => {
   const frame = $('#radarMap');
   frame.src = 'about:blank';
   loadRadar();
 };
+
 $('#openRadar').onclick = () => {
-  window.open(
-    'https://weatherscope.com/embed/map?zoom=4',
-    '_blank',
-    'noopener'
-  );
+  window.open(radarMapUrl(), '_blank', 'noopener');
+};
 };
 let noaaRequestToken = 0;
 async function findNOAA() {
