@@ -339,6 +339,81 @@ async function findRadio() {
       '<div class="empty">Could not load radio stations. Try again.</div>';
   }
 }
+
+function stopAudio() {
+  const audio = $('#audio');
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load();
+
+  $('#radioPlayer').classList.add('hidden');
+  $('#noaaPlayer')?.classList.add('hidden');
+}
+
+async function playStream(url, title, type) {
+  const audio = $('#audio');
+
+  if (!url) {
+    toast('No stream URL is available for this station.');
+    return;
+  }
+
+  try {
+    audio.pause();
+    audio.src = url;
+    audio.classList.remove('hidden');
+
+    $('#radioNow').textContent = title || 'Internet radio';
+    $('#radioPlayer').classList.remove('hidden');
+
+    await audio.play();
+  } catch (error) {
+    toast('Playback failed. This station may be offline or block playback.');
+  }
+}
+
+function renderRadio() {
+  const el = $('#radioList');
+
+  if (!radio.length) {
+    el.innerHTML =
+      '<div class="empty">No playable stations found. Try another category.</div>';
+    return;
+  }
+
+  el.innerHTML = radio.map((s, i) => `
+    <div class="station">
+      <button type="button" data-radio-station="${i}">
+        <strong>${esc(s.name)}</strong>
+        <div class="small">${esc(s.country || s.language || s.tags || '')}</div>
+        <div class="small">${s.bitrate ? esc(s.bitrate) + ' kbps' : 'Internet radio'}</div>
+      </button>
+      <button type="button" class="btn secondary" data-radio-play="${i}">
+        ▶ Play
+      </button>
+    </div>
+  `).join('');
+
+  $$('[data-radio-play]').forEach(button => {
+    button.onclick = () => {
+      const station = radio[+button.dataset.radioPlay];
+      playStream(station.url_resolved, station.name, 'radio');
+    };
+  });
+}
+
+// Connect both internet-radio search buttons.
+$('#radioSearch').onclick = findRadio;
+$('#findRadio').onclick = findRadio;
+
+// Connect both stop buttons to the shared audio player.
+$('#stopRadio').onclick = stopAudio;
+$('#stopNOAA').onclick = stopAudio;
+
+// Report playback errors that occur after playback starts.
+$('#audio').onerror = () => {
+  toast('Unable to play this stream. Try another station.');
+};
 $('#units').onchange=()=>{units=$('#units').value;localStorage.setItem('jw_units',units);loadWeather()};$('#clock24').onchange=()=>{clock24=$('#clock24').checked;localStorage.setItem('jw_clock24',clock24);toast('Setting saved.')};
 (async function init(){renderFavs();let saved=localStorage.getItem('jw_loc');if(saved){try{await chooseLocation(JSON.parse(saved))}catch{}}else if(favs.length){await chooseLocation(favs[0])}})();
 </script></body></html>
