@@ -345,6 +345,7 @@ function stopAudio() {
   audio.pause();
   audio.removeAttribute('src');
   audio.load();
+  audio.classList.add('hidden');
 
   $('#radioPlayer').classList.add('hidden');
   $('#noaaPlayer')?.classList.add('hidden');
