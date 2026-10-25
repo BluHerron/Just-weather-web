@@ -175,16 +175,24 @@ const hMiss=m=>pl(m.want-m.got,'hour');
 const yMiss=[r.ytd.dayMiss?pl(r.ytd.dayMiss,'day'):'',r.ytd.hrMiss?pl(r.ytd.hrMiss,'hour'):''].filter(Boolean).join(' + ');
 el.innerHTML=`<div class="rainhead"><div class="eyebrow">Rainfall totals</div><div class="small">through ${hl}</div></div><div class="raingrid">${cell('LAST 24 HOURS',r.h24,'Model estimate',hMiss(r.h24))}${cell('LAST 7 DAYS',r.d7,'Model estimate',hMiss(r.d7))}${cell('LAST MONTH',r.month,r.month.est?mName+' · '+pl(r.month.est,'day')+' estimated':mName+' · archive data',pl(r.month.want-r.month.got,'day'))}${cell('YEAR TO DATE',r.ytd,dl(r.today.slice(0,4)+'-01-01')+' – '+dl(r.today)+(r.ytd.est?' · recent days estimated':' · archive data'),yMiss)}</div><div class="rainnote">${notes.join(' ')}</div>`}
 async function loadRainfall(d){
-const tok=++rainToken;if(!loc||!d||!d.current||!d.current.time)return;
-const unit=units==='fahrenheit'?'inch':'mm',now=d.current.time,today=now.slice(0,10),Y=+today.slice(0,4),M=+today.slice(5,7);
-const pmStart=(M===1?Y-1:Y)+'-'+rp(M===1?12:M-1)+'-01',start=M===1?pmStart:Y+'-01-01',end=rainShift(today,-1);
-const base=`latitude=${loc.lat}&longitude=${loc.lon}&timezone=${encodeURIComponent(d.timezone||'auto')}&precipitation_unit=${unit}`;
+const tok=++rainToken;
+if(!loc||!d||!d.current||!d.current.time)return;
+const requestLoc={...loc};
+const requestUnits=units;
+const unit=requestUnits==='fahrenheit'?'inch':'mm';
+const now=d.current.time;
+const today=now.slice(0,10);
+const Y=+today.slice(0,4),M=+today.slice(5,7);
+const pmStart=(M===1?Y-1:Y)+'-'+rp(M===1?12:M-1)+'-01';
+const start=M===1?pmStart:Y+'-01-01';
+const end=rainShift(today,-1);
+const base=`latitude=${requestLoc.lat}&longitude=${requestLoc.lon}&timezone=${encodeURIComponent(d.timezone||'auto')}&precipitation_unit=${unit}`;
 const arch=`https://archive-api.open-meteo.com/v1/archive?${base}&daily=precipitation_sum&start_date=${start}`;
 const [h,f,a]=await Promise.allSettled([
 rainJSON(`https://api.open-meteo.com/v1/forecast?${base}&hourly=precipitation&past_days=8&forecast_days=1`),
 rainJSON(`https://api.open-meteo.com/v1/forecast?${base}&daily=precipitation_sum&past_days=92&forecast_days=1`),
 rainJSON(`${arch}&end_date=${end}`).catch(()=>rainJSON(`${arch}&end_date=${rainShift(today,-7)}`))]);
-const el=$('#rainTotals');if(tok!==rainToken||!el)return;
+const el=$('#rainTotals'); if(tok!==rainToken||!el||!loc||    loc.lat!==requestLoc.lat||loc.lon!==requestLoc.lon||    units!==requestUnits)return;
 const ok=x=>x.status==='fulfilled'?x.value:null,H=ok(h),F=ok(f),A=ok(a);
 if(!H&&!F&&!A){el.innerHTML='<div class="eyebrow">Rainfall totals</div><div class="small">Rainfall totals are unavailable right now. Tap Refresh to try again.</div>';return}
 const notes=['Precipitation includes rain and melted snow. Recent totals are Open-Meteo model estimates, not rain-gauge readings; the historical archive trails real time by about 5 days.'];
